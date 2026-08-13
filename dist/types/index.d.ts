@@ -20,6 +20,7 @@ export interface NormalizedJob {
     lon: number;
     must_skills: string[];
     must_languages: string[];
+    must_education: string[];
     occupation: string;
     occupation_group: string;
     publication_url: string;
@@ -41,4 +42,17 @@ export interface MatchResult {
     missing: string[];
     matchedSkills: string[];
     matchedLanguages: string[];
+    matchedEducation: string[];
+}
+export interface SchedulerConfig {
+    cronExpression?: string;
+    githubActions?: {
+        workflowId: string;
+        event: 'schedule' | 'workflow_dispatch';
+    };
+    webhookUrl?: string;
+    checkIntervalMinutes?: number;
+    maxJobs: number;
+    radiusKm: number;
+    userIds: string[];
 }

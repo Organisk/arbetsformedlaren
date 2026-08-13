@@ -124,6 +124,7 @@ export interface NormalizedJob {
   lon: number;
   must_skills: string[];
   must_languages: string[];
+  must_education: string[];
   occupation: string;
   occupation_group: string;
   publication_url: string;
@@ -179,6 +180,7 @@ export async function searchJobs(filters: {
     lon: hit.workplace_address?.coordinates?.[0] || 0,  // [lon, lat] -> lon
     must_skills: hit.must_have?.skills?.map((s: Skill) => s.label || s.concept_id || '') || [],
     must_languages: hit.must_have?.languages?.map((l: Skill) => l.label || l.concept_id || '') || [],
+    must_education: hit.must_have?.education_level?.map((e: any) => e || '') || [],
     occupation: hit.occupation?.label || '',
     occupation_group: hit.occupation_group?.label || '',
     publication_url: hit.webpage_url,

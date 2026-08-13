@@ -40,6 +40,7 @@ export async function searchJobs(filters) {
         lon: hit.workplace_address?.coordinates?.[0] || 0, // [lon, lat] -> lon
         must_skills: hit.must_have?.skills?.map((s) => s.label || s.concept_id || '') || [],
         must_languages: hit.must_have?.languages?.map((l) => l.label || l.concept_id || '') || [],
+        must_education: hit.must_have?.education_level?.map((e) => e || '') || [],
         occupation: hit.occupation?.label || '',
         occupation_group: hit.occupation_group?.label || '',
         publication_url: hit.webpage_url,

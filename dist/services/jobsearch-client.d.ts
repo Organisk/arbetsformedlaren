@@ -127,6 +127,7 @@ export interface NormalizedJob {
     lon: number;
     must_skills: string[];
     must_languages: string[];
+    must_education: string[];
     occupation: string;
     occupation_group: string;
     publication_url: string;
