@@ -449,7 +449,7 @@ Wave FINAL (Integration + QA):
 bun run dev
 
 # Test API integration
-curl http://localhost:3000/api/health
+curl http://localhost:4443/api/health
 
 # Run type check
 npx tsc --noEmit

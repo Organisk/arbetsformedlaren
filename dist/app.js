@@ -22,7 +22,7 @@ app.use((err, req, res, next) => {
     console.error('Error:', err);
     res.status(500).json({ error: 'Internal server error' });
 });
-app.listen(port, () => {
+app.listen(port, "0.0.0.0", () => {
     console.log(`🚀 Arbetsförmedlaren running at http://localhost:${port}`);
     console.log(`📍 Health check: http://localhost:${port}/api/health`);
 });
