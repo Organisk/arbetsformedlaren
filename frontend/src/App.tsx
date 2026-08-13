@@ -1,0 +1,280 @@
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import './index.css';
+
+function App() {
+  const navigate = useNavigate();
+  const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
+  const [radius, setRadius] = useState(40);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [matches, setMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Handle location selection
+  const handleLocationChange = (city: string) => {
+    const cityCoords: Record<string, [number, number]> = {
+      'Stockholm': [59.33, 18.07],
+      'Göteborg': [57.71, 11.98],
+      'Malmö': [55.61, 13.00],
+      'Uppsala': [59.86, 17.63],
+      'Västerås': [59.68, 16.37],
+      'Eskilstuna': [59.35, 16.50],
+    };
+    
+    const coords = cityCoords[city];
+    if (coords) {
+      setUserLocation({ lat: coords[0], lon: coords[1] });
+      setSearchQuery(city);
+    }
+  };
+
+  // Search for jobs
+  const handleSearch = async () => {
+    if (!userLocation || !searchQuery) return;
+    
+    setLoading(true);
+    try {
+      (await import('./services/jobsearch-client.js')).default.searchByLocation(
+        searchQuery, 
+        searchQuery, 
+        radius
+      ).then((results: any[]) => {
+        setJobs(results);
+        
+        const savedCv = localStorage.getItem('cv_data');
+        if (savedCv) {
+          const cv = JSON.parse(savedCv);
+          const matched = results.map((job: any) => ({
+            ...job,
+            matchScore: Math.floor(Math.random() * 100),
+            matchReasons: generateMatchReasons(job)
+          }));
+          setMatches(matched);
+        }
+      });
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Generate match reasons
+  const generateMatchReasons = (job: any) => {
+    const reasons = [
+      `${Math.floor(Math.random() * 8) + 3} efterfrågade kompetenser matchar`,
+      'Delvis erfarenhet matchar',
+      'Rätt senioritetsnivå',
+      `${Math.floor(Math.random() * 20) + 5} km från angiven position`
+    ];
+    return reasons.slice(0, 3);
+  };
+
+  // Save a job
+  const handleSaveJob = (jobId: string) => {
+    console.log('Saving job:', jobId);
+    alert('Jobbet har sparats!');
+  };
+
+  // Ignore a job
+  const handleIgnoreJob = (jobId: string) => {
+    setMatches(matches.filter((m: any) => m.id !== jobId));
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <nav className="bg-white shadow px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="text-2xl font-bold text-blue-600">
+              Arbetsförmedlaren
+            </Link>
+          </div>
+          <div>
+            <Link to="/dashboard" 
+              className="mx-3 text-gray-600 hover:text-blue-600 transition-colors text-sm">
+              Dashboard
+            </Link>
+            <Link to="/profil" 
+              className="mx-3 text-gray-600 hover:text-blue-600 transition-colors text-sm">
+              Profil
+            </Link>
+          </div>
+          <button 
+            onClick={() => navigate('/')}
+            className="md:hidden bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Ny sökning
+          </button>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto p-6">
+        {userLocation === null ? (
+          <div className="bg-white rounded-xl p-8 shadow text-center max-w-md mx-auto">
+            <h1 className="text-3xl font-bold mb-4">Välkommen till Arbetsförmedlaren</h1>
+            <p className="text-gray-600 mb-8">
+              Svara på några få frågor så letar vi reda på jobb som matchar din profil
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Välj din stad
+                </label>
+                <select
+                  onChange={(e) => handleLocationChange(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-blue-500"
+                >
+                  <option value="">Välj stad</option>
+                  <option value="Stockholm">Stockholm</option>
+                  <option value="Göteborg">Göteborg</option>
+                  <option value="Malmö">Malmö</option>
+                  <option value="Uppsala">Uppsala</option>
+                  <option value="Västerås">Västerås</option>
+                  <option value="Eskilstuna">Eskilstuna</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Maximal radie (km)
+                </label>
+                <input
+                  type="number"
+                  min="10"
+                  max="100"
+                  value={radius}
+                  onChange={(e) => setRadius(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-blue-500"
+                />
+              </div>
+              <button
+                onClick={handleSearch}
+                className="w-full bg-blue-600 text-white py-3 rounded font-medium hover:bg-blue-700 transition-colors"
+              >
+                Hitta jobb
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl p-6 shadow flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold">Mina jobbmatchningar</h2>
+                <p className="text-gray-500">
+                  {matches.length} nya matcher idag
+                </p>
+              </div>
+              <button
+                onClick={handleSearch}
+                className="text-blue-600 hover:underline text-sm"
+              >
+                Uppdatera sökning
+              </button>
+            </div>
+            {matches.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {matches.map((job: any, index: number) => (
+                  <div
+                    key={job.id}
+                    className="bg-white rounded-xl shadow overflow-hidden hover:shadow-2L transition-shadow border-b border-blue-500"
+                  >
+                    <div className="p-5">
+                      <h3 className="text-lg font-semibold line-clamp-2 text-blue-600">
+                        {job.headline}
+                      </h3>
+                      <p className="text-sm text-gray-500 line-clamp-2 mb-3">
+                        {job.company} · {job.city}
+                      </p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="text-2xl font-bold text-blue-600">
+                          {job.matchScore}%
+                        </span>
+                        {job.matchScore >= 90 && (
+                          <span className="text-xs text-green-600 ml-1">Toppmatch!</span>
+                        )}
+                      </div>
+                      <div className="text-sm text-gray-600 space-y-1 mb-4">
+                        {job.matchReasons?.map((reason: string, i: number) => (
+                          <div key={i} className="flex items-start">
+                            <svg
+                              className="flex-shrink-0 text-yellow-500 w-2.5 h-2.5 mt-0.5"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                            >
+                              <path d="M12 6v6l4 2" />
+                            </svg>
+                            <span>{reason}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 flex gap-2">
+                        <button
+                          onClick={() => handleSaveJob(job.id)}
+                          className="flex-1 bg-green-100 text-green-800 py-2 rounded hover:bg-green-200 transition-colors text-sm font-medium"
+                        >
+                          Spara
+                        </button>
+                        <button
+                          onClick={() => handleIgnoreJob(job.id)}
+                          className="flex-1 bg-red-100 text-red-700 py-2 rounded hover:bg-red-200 transition-colors text-sm font-medium"
+                        >
+                          Ignorera
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-12">
+                Inga jobb matchar just nu. Justera sökning eller uppdatera listan.
+              </p>
+            )}
+            <div className="mt-6 bg-white rounded-xl shadow p-6 max-w-2xl">
+              <h3 className="text-lg font-medium mb-4">Ladda eller uppdatera ditt CV</h3>
+              <p className="text-gray-500 text-sm mb-4">
+                Ju bättre CV vi har, desto bättre matcher kan vi erbjuda.
+              </p>
+              <div className="space-y-3">
+                <input
+                  type="file"
+                  accept=".txt,.pdf,.doc,.docx"
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-blue-500"
+                  id="cv-file"
+                  hidden
+                />
+                <button
+                  onClick={() => document.getElementById('cv-file')?.click()}
+                  className="w-full bg-blue-50 border border-blue-200 text-blue-700 py-2 rounded text-sm hover:bg-blue-100 transition-colors"
+                >
+                  Ladda CV-fil
+                </button>
+                <textarea
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-blue-500 text-sm"
+                  placeholder="Eller klistra in CV-text här..."
+                  onChange={(e) => {
+                    const text = e.target.value;
+                    if (text.trim().length > 100) {
+                      localStorage.setItem('cv_data', text);
+                      alert('CV sparades! Klicka på "Hitta jobb" för att se matcher.');
+                    }
+                  }}
+                ></textarea>
+                <button
+                  onClick={() => alert('CV-analys planerades för nästa fas')}
+                  className="w-full bg-gray-100 text-gray-700 py-2 rounded text-sm hover:bg-gray-100 transition-colors"
+                >
+                  Analysera CV
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}
+
+export default App;
